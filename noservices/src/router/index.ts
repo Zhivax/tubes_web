@@ -6,23 +6,48 @@ const router = createRouter({
   routes: [
     {
       path: '/',
+      name: 'landing',
+      component: () => import('../views/LandingView.vue'),
+      meta: { requiresGuest: true }
+    },
+    {
+      path: '/dashboard',
       name: 'home',
       component: HomeView,
+      meta: { requiresAuth: true }
     },
     {
       path: '/inventory',
       name: 'inventory',
       component: () => import('../views/InventoryView.vue'),
+      meta: { requiresAuth: true }
     },
     {
       path: '/about',
       name: 'about',
-      // route level code-splitting
-      // this generates a separate chunk (About.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
       component: () => import('../views/AboutView.vue'),
-    },
-  ],
+      meta: { requiresAuth: true }
+    }
+  ]
+})
+
+// Navigation guard
+router.beforeEach((to, from, next) => {
+  const isAuthenticated = !!localStorage.getItem('access_token')
+
+  // Redirect to dashboard if trying to access landing while logged in
+  if (to.name === 'landing' && isAuthenticated) {
+    next('/dashboard')
+    return
+  }
+
+  // Redirect to landing if trying to access protected route while not logged in
+  if (to.meta.requiresAuth && !isAuthenticated) {
+    next('/')
+    return
+  }
+
+  next()
 })
 
 export default router

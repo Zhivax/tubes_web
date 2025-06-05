@@ -9,7 +9,7 @@ import { RouterLink } from 'vue-router'
       <span class="sidebar-title">Inventory</span>
     </div>
     <nav class="sidebar-links">
-      <RouterLink to="/" exact-active-class="active">Dashboard</RouterLink>
+      <RouterLink to="/dashboard" exact-active-class="active">Dashboard</RouterLink>
       <RouterLink to="/inventory" exact-active-class="active">Inventory</RouterLink>
       <RouterLink to="/about" exact-active-class="active">About</RouterLink>
     </nav>

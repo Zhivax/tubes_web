@@ -1,20 +1,28 @@
 <script setup lang="ts">
+import { RouterView, useRoute } from 'vue-router'
 import Sidebar from './components/Sidebar.vue'
 import Navbar from './components/Navbar.vue'
-import { RouterView } from 'vue-router'
+
+const route = useRoute()
 </script>
 
 <template>
   <div id="main-layout">
-    <div class="layout-row">
-      <Sidebar />
-      <div class="content-col">
-        <Navbar />
-        <main class="main-content">
-          <RouterView />
-        </main>
+    <template v-if="route.name === 'landing'">
+      <Navbar />
+      <RouterView />
+    </template>
+    <template v-else>
+      <div class="layout-row">
+        <Sidebar />
+        <div class="content-col">
+          <Navbar />
+          <main class="main-content">
+            <RouterView />
+          </main>
+        </div>
       </div>
-    </div>
+    </template>
   </div>
 </template>
 
@@ -23,14 +31,13 @@ import { RouterView } from 'vue-router'
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  width: 100%;
 }
-
 .layout-row {
   display: flex;
   flex: 1;
   min-height: 0;
 }
-
 .content-col {
   display: flex;
   flex-direction: column;
@@ -39,7 +46,6 @@ import { RouterView } from 'vue-router'
   min-height: 100vh;
   background: var(--color-background);
 }
-
 .main-content {
   flex: 1;
   padding: 2rem 0;

@@ -1,7 +1,8 @@
 import os
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'  # Allow OAuth2 over HTTP for local dev
 
-from flask import Flask, request, jsonify, redirect
+from flask import Flask, request, jsonify, redirect, session
+from flask_cors import CORS  # Add this import
 from flask_jwt_extended import JWTManager, create_access_token
 from datetime import timedelta
 import boto3
@@ -28,6 +29,12 @@ dynamodb = boto3.resource('dynamodb', region_name=AWS_REGION)
 user_table = dynamodb.Table(DYNAMODB_TABLE)
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS
+
+# Update FRONTEND_URL and add it to allowed origins
+FRONTEND_URL = "http://localhost:5173"
+app.config['CORS_ORIGINS'] = [FRONTEND_URL]
+
 app.secret_key = os.environ.get("FLASK_SECRET_KEY")
 app.config['JWT_SECRET_KEY'] = os.environ.get("JWT_SECRET_KEY")
 jwt = JWTManager(app)
@@ -39,13 +46,18 @@ def get_google_provider_cfg():
 
 @app.route("/auth/login/google")
 def login_google():
+    # Clear any existing session
+    session.clear()
+    
     google_provider_cfg = get_google_provider_cfg()
     authorization_endpoint = google_provider_cfg["authorization_endpoint"]
-    # Use http for local redirect_uri
+    
+    # Force prompt for account selection
     request_uri = client.prepare_request_uri(
         authorization_endpoint,
         redirect_uri=request.base_url + "/callback",
         scope=["openid", "email", "profile"],
+        prompt="select_account"  # Force Google account selection
     )
     return redirect(request_uri)
 
@@ -99,13 +111,17 @@ def callback_google():
                 identity=unique_id,
                 expires_delta=timedelta(days=1)
             )
-            return jsonify(access_token=access_token, email=users_email, name=users_name), 200
+            
+            # Redirect ke frontend dengan token
+            redirect_url = f"{FRONTEND_URL}?access_token={access_token}&name={users_name}"
+            return redirect(redirect_url)
+            
         else:
-            return jsonify({"msg": "User email not available or not verified by Google."}), 400
+            return redirect(f"{FRONTEND_URL}?error=email_not_verified")
     except Exception as e:
         import traceback
         print(traceback.format_exc())
-        return jsonify({"msg": "Internal server error", "error": str(e)}), 500
+        return redirect(f"{FRONTEND_URL}?error=server_error")
 
 @app.route('/auth/register', methods=['POST'])
 def register():
@@ -128,4 +144,5 @@ def register():
     return jsonify({"msg": "User registered successfully"}), 201
 
 if __name__ == '__main__':
-    app.run(port=5001, debug=True)
+    # Ensure debug mode is on and host is accessible
+    app.run(port=5001, host='0.0.0.0', debug=True)
