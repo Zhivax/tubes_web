@@ -37,3 +37,7 @@ htmlcov/
 
 # Local files
 *.local
+
+# Environment variables and secrets
+.env
+.env.*
